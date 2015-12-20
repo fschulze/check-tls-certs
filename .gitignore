@@ -1,6 +1,7 @@
 /.tox/
 /bin/
 /default.sublime-*
+/dist/
 /domains.txt
 /include/
 /lib/
