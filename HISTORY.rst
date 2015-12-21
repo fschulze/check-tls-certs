@@ -10,6 +10,9 @@ Changelog
 * Skip duplicate messages for alternate names.
   [fschulze]
 
+* Add certificate issuer to output.
+  [fschulze]
+
 
 0.1.0 - 2015-12-20
 ------------------

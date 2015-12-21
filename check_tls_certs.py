@@ -21,6 +21,8 @@ def check(domainnames, expiry_warn=14):
             OpenSSL.crypto.FILETYPE_PEM, result)
         expires = datetime.datetime.strptime(cert.get_notAfter(), '%Y%m%d%H%M%SZ')
         today = datetime.datetime.now()
+        msgs.append(
+            ('info', "Issued by: %s" % cert.get_issuer().commonName))
         if expires < today:
             msgs.append(
                 ('error', "The certificate has expired on %s." % expires))
