@@ -29,8 +29,10 @@ def check(domainnames, expiry_warn=14):
                 ('warning', "The certificate expires on %s (%s)." % (
                     expires, expires - today)))
         else:
+            # rounded delta
+            delta = ((expires - today) // 60 // 10 ** 6) * 60 * 10 ** 6
             msgs.append(
-                ('info', "Valid until %s (%s)." % (expires, expires - today)))
+                ('info', "Valid until %s (%s)." % (expires, delta)))
         if len(domainnames) == 1:
             name = cert.get_subject().commonName
             if name != domain:
