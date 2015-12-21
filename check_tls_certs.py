@@ -71,6 +71,7 @@ def main(file, domain):
     errors = 0
     for domainnames in domains:
         click.echo(', '.join(domainnames))
+        seen = set()
         for level, msg in check(domainnames):
             if level == 'error':
                 color = 'red'
@@ -80,9 +81,11 @@ def main(file, domain):
                 warnings = warnings + 1
             else:
                 color = None
-            if color:
-                msg = click.style(msg, fg=color)
-            click.echo("    " + msg)
+            if msg not in seen:
+                seen.add(msg)
+                if color:
+                    msg = click.style(msg, fg=color)
+                click.echo("    " + msg)
     if errors:
         sys.exit(4)
     elif warnings:
