@@ -23,6 +23,10 @@ def check(domainnames, expiry_warn=14):
         today = datetime.datetime.now()
         msgs.append(
             ('info', "Issued by: %s" % cert.get_issuer().commonName))
+        sig_alg = cert.get_signature_algorithm()
+        if sig_alg.startswith('sha1'):
+            msgs.append(
+                ('error', "Unsecure signature algorithm %s" % sig_alg))
         if expires < today:
             msgs.append(
                 ('error', "The certificate has expired on %s." % expires))

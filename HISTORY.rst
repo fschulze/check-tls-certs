@@ -13,6 +13,9 @@ Changelog
 * Add certificate issuer to output.
   [fschulze]
 
+* Mark sha1 certificate signature as error.
+  [fschulze]
+
 
 0.1.0 - 2015-12-20
 ------------------
