@@ -4,6 +4,9 @@ Changelog
 0.2.0 - Unreleased
 ------------------
 
+* Fix packaging.
+  [witsch]
+
 * Round expiry time delta to minutes for nicer output.
   [fschulze]
 
