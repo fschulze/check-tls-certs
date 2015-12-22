@@ -8,7 +8,7 @@ HISTORY = open(os.path.abspath('HISTORY.rst')).read()
 
 setup(
     name='check-tls-certs',
-    version='0.1.0',
+    version='0.1.1',
     long_description="\n\n".join([README, HISTORY]),
     classifiers=[
         "Development Status :: 4 - Beta",
