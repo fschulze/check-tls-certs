@@ -19,12 +19,12 @@ def check(domainnames, expiry_warn=14):
             stderr=tempfile.TemporaryFile())
         cert = OpenSSL.crypto.load_certificate(
             OpenSSL.crypto.FILETYPE_PEM, result)
-        expires = datetime.datetime.strptime(cert.get_notAfter(), '%Y%m%d%H%M%SZ')
+        expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
         today = datetime.datetime.now()
         msgs.append(
             ('info', "Issued by: %s" % cert.get_issuer().commonName))
         sig_alg = cert.get_signature_algorithm()
-        if sig_alg.startswith('sha1'):
+        if sig_alg.startswith(b'sha1'):
             msgs.append(
                 ('error', "Unsecure signature algorithm %s" % sig_alg))
         if expires < today:
@@ -70,8 +70,8 @@ def main(file, domain):
     """
     domains = []
     if file:
-        domains = itertools.chain(domains, (x.strip() for x in open(file, 'rb')))
-    domains = (bytes(x) for x in itertools.chain(domains, domain))
+        domains = itertools.chain(domains, (x.strip() for x in open(file, 'r', encoding='utf-8')))
+    domains = itertools.chain(domains, domain)
     domains = (x.split('/') for x in domains if x)
     warnings = 0
     errors = 0

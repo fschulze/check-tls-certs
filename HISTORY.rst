@@ -4,6 +4,9 @@ Changelog
 0.2.0 - Unreleased
 ------------------
 
+* Actually support Python 3.4 as advertised.
+  [fschulze]
+
 * Fix packaging.
   [witsch]
 
