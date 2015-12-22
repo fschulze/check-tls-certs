@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.2.0 - Unreleased
+0.2.0 - 2015-12-22
 ------------------
 
 * Actually support Python 3.4 as advertised.
