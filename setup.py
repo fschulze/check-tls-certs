@@ -21,4 +21,4 @@ setup(
         'pyOpenSSL'],
     entry_points={
         'console_scripts': ['check_tls_certs = check_tls_certs:main']},
-    pyackages=['check_tls_certs'])
+    py_modules=['check_tls_certs'])
