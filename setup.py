@@ -8,7 +8,7 @@ HISTORY = open(os.path.abspath('HISTORY.rst')).read()
 
 setup(
     name='check-tls-certs',
-    version='0.1.0',
+    version='0.1.1',
     long_description="\n\n".join([README, HISTORY]),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -21,4 +21,4 @@ setup(
         'pyOpenSSL'],
     entry_points={
         'console_scripts': ['check_tls_certs = check_tls_certs:main']},
-    pyackages=['check_tls_certs'])
+    py_modules=['check_tls_certs'])
