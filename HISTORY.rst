@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.3.0 - Unreleased
+------------------
+
+* Use asyncio to fetch certificates in parallel.
+  [fschulze]
+
+
 0.2.0 - 2015-12-22
 ------------------
 

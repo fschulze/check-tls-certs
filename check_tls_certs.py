@@ -1,24 +1,46 @@
+import asyncio
 import click
 import datetime
 import itertools
-import subprocess
 import sys
 import tempfile
 import OpenSSL
 
 
-def check(domainnames, expiry_warn=14):
+@asyncio.coroutine
+def get_cert_from_domain(domain):
+    create = asyncio.create_subprocess_exec(
+        'openssl', 's_client', '-servername', domain,
+        '-connect', '%s:443' % domain,
+        stdin=tempfile.TemporaryFile('rb'),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT)
+    proc = yield from create
+    data = yield from proc.stdout.read()
+    yield from proc.wait()
+    if proc.returncode == 0:
+        data = OpenSSL.crypto.load_certificate(
+            OpenSSL.crypto.FILETYPE_PEM, data)
+    return (domain, data)
+
+
+@asyncio.coroutine
+def get_domain_certs(domains):
+    (done, pending) = yield from asyncio.wait([
+        get_cert_from_domain(x)
+        for x in itertools.chain(*domains)])
+    return dict(x.result() for x in done)
+
+
+def check(domainnames_certs, expiry_warn=14):
     msgs = []
-    for domain in domainnames:
-        cmd = [
-            'openssl', 's_client', '-servername', domain,
-            '-connect', '%s:443' % domain]
-        result = subprocess.check_output(
-            cmd,
-            stdin=tempfile.TemporaryFile('rb'),
-            stderr=tempfile.TemporaryFile())
-        cert = OpenSSL.crypto.load_certificate(
-            OpenSSL.crypto.FILETYPE_PEM, result)
+    domainnames = set(dnc[0] for dnc in domainnames_certs)
+    for domain, cert in domainnames_certs:
+        if not isinstance(cert, OpenSSL.crypto.X509):
+            msgs.append(
+                ('error', "Couldn't fetch certificate for %s:\n%s" % (
+                    domain, cert.decode('ascii'))))
+            continue
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
         today = datetime.datetime.now()
         msgs.append(
@@ -51,11 +73,25 @@ def check(domainnames, expiry_warn=14):
             alt_names = [
                 x.strip().replace('DNS:', '')
                 for x in str(ext).split(',')]
-            unmatched = set(domainnames).difference(set(alt_names))
+            unmatched = domainnames.difference(set(alt_names))
             if unmatched:
                 msgs.append(
                     ('warning', "Unmatched alternate names %s." % ', '.join(unmatched)))
     return msgs
+
+
+def check_domains(domains, domain_certs):
+    result = []
+    for domainnames in domains:
+        domainnames_certs = [(dn, domain_certs[dn]) for dn in domainnames]
+        msgs = []
+        seen = set()
+        for level, msg in check(domainnames_certs):
+            if msg not in seen:
+                seen.add(msg)
+                msgs.append((level, msg))
+        result.append((domainnames, msgs))
+    return result
 
 
 @click.command()
@@ -68,17 +104,23 @@ def main(file, domain):
 
        Exits with return code 3 when there are warnings and code 4 when there are errors.
     """
+    if sys.platform == "win32":
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    else:
+        loop = asyncio.get_event_loop()
     domains = []
     if file:
         domains = itertools.chain(domains, (x.strip() for x in open(file, 'r', encoding='utf-8')))
     domains = itertools.chain(domains, domain)
-    domains = (x.split('/') for x in domains if x)
+    domains = [x.split('/') for x in domains if x]
+    domain_certs = loop.run_until_complete(get_domain_certs(domains))
+    loop.close()
     warnings = 0
     errors = 0
-    for domainnames in domains:
+    for domainnames, msgs in check_domains(domains, domain_certs):
         click.echo(', '.join(domainnames))
-        seen = set()
-        for level, msg in check(domainnames):
+        for level, msg in msgs:
             if level == 'error':
                 color = 'red'
                 errors = errors + 1
@@ -87,11 +129,10 @@ def main(file, domain):
                 warnings = warnings + 1
             else:
                 color = None
-            if msg not in seen:
-                seen.add(msg)
-                if color:
-                    msg = click.style(msg, fg=color)
-                click.echo("    " + msg)
+            if color:
+                msg = click.style(msg, fg=color)
+            msg = "\n".join("    " + m for m in msg.split('\n'))
+            click.echo(msg)
     if errors:
         sys.exit(4)
     elif warnings:
