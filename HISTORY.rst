@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.4.0 - Unreleased
+------------------
+
+* Get rid of ``openssl`` executable requirement.
+  [fschulze]
+
+
 0.3.0 - 2016-01-01
 ------------------
 

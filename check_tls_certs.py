@@ -2,33 +2,33 @@ import asyncio
 import click
 import datetime
 import itertools
+import ssl
 import sys
-import tempfile
 import OpenSSL
 
 
-@asyncio.coroutine
 def get_cert_from_domain(domain):
-    create = asyncio.create_subprocess_exec(
-        'openssl', 's_client', '-servername', domain,
-        '-connect', '%s:443' % domain,
-        stdin=tempfile.TemporaryFile('rb'),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT)
-    proc = yield from create
-    data = yield from proc.stdout.read()
-    yield from proc.wait()
-    if proc.returncode == 0:
+    try:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with ssl.create_connection((domain, 443)) as sock:
+            with context.wrap_socket(sock, server_hostname=domain) as sslsock:
+                dercert = sslsock.getpeercert(True)
+        data = ssl.DER_cert_to_PEM_cert(dercert)
         data = OpenSSL.crypto.load_certificate(
             OpenSSL.crypto.FILETYPE_PEM, data)
+    except Exception as e:
+        data = str(e)
     return (domain, data)
 
 
-@asyncio.coroutine
 def get_domain_certs(domains):
-    (done, pending) = yield from asyncio.wait([
-        get_cert_from_domain(x)
-        for x in itertools.chain(*domains)])
+    loop = asyncio.get_event_loop()
+    (done, pending) = loop.run_until_complete(asyncio.wait([
+        loop.run_in_executor(None, get_cert_from_domain, x)
+        for x in itertools.chain(*domains)]))
+    loop.close()
     return dict(x.result() for x in done)
 
 
@@ -39,7 +39,7 @@ def check(domainnames_certs, expiry_warn=14):
         if not isinstance(cert, OpenSSL.crypto.X509):
             msgs.append(
                 ('error', "Couldn't fetch certificate for %s:\n%s" % (
-                    domain, cert.decode('ascii'))))
+                    domain, cert)))
             continue
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
         today = datetime.datetime.now()
@@ -104,18 +104,12 @@ def main(file, domain):
 
        Exits with return code 3 when there are warnings and code 4 when there are errors.
     """
-    if sys.platform == "win32":
-        loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)
-    else:
-        loop = asyncio.get_event_loop()
     domains = []
     if file:
         domains = itertools.chain(domains, (x.strip() for x in open(file, 'r', encoding='utf-8')))
     domains = itertools.chain(domains, domain)
     domains = [x.split('/') for x in domains if x]
-    domain_certs = loop.run_until_complete(get_domain_certs(domains))
-    loop.close()
+    domain_certs = get_domain_certs(domains)
     warnings = 0
     errors = 0
     for domainnames, msgs in check_domains(domains, domain_certs):

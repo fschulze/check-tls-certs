@@ -4,12 +4,6 @@ check-tls-certs
 Check TLS certificates of domains for expiration dates and more.
 
 
-Requirements
-------------
-
-You need an ``openssl`` executable in your path for fetching the certificate from the server.
-
-
 Usage
 -----
 
