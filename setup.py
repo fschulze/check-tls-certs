@@ -9,6 +9,7 @@ HISTORY = open(os.path.abspath('HISTORY.rst')).read()
 setup(
     name='check-tls-certs',
     version='0.4.0',
+    description="Check TLS certificates of domains for expiration dates and more.",
     long_description="\n\n".join([README, HISTORY]),
     classifiers=[
         "Development Status :: 4 - Beta",
