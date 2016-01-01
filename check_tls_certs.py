@@ -133,7 +133,11 @@ def main(file, domain):
                 msg = click.style(msg, fg=color)
             msg = "\n".join("    " + m for m in msg.split('\n'))
             click.echo(msg)
+    msg = "%s error(s), %s warning(s)" % (errors, warnings)
     if errors:
+        click.echo(click.style(msg, fg="red"))
         sys.exit(4)
     elif warnings:
+        click.echo(click.style(msg, fg="yellow"))
         sys.exit(3)
+    click.echo(click.style(msg, fg="green"))
