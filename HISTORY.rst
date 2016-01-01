@@ -4,6 +4,9 @@ Changelog
 0.4.0 - Unreleased
 ------------------
 
+* Allow comments starting with ``#`` in domain file.
+  [fschulze]
+
 * Get rid of ``openssl`` executable requirement.
   [fschulze]
 

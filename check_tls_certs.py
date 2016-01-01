@@ -108,7 +108,7 @@ def main(file, domain):
     if file:
         domains = itertools.chain(domains, (x.strip() for x in open(file, 'r', encoding='utf-8')))
     domains = itertools.chain(domains, domain)
-    domains = [x.split('/') for x in domains if x]
+    domains = [x.split('/') for x in domains if x and not x.startswith('#')]
     domain_certs = get_domain_certs(domains)
     warnings = 0
     errors = 0

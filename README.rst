@@ -22,3 +22,5 @@ Usage
     Options:
       -f, --file FILE  File to read domains from. One per line.
       --help           Show this message and exit.
+
+When domains are read from a file, lines starting with a ``#`` are ignored.
