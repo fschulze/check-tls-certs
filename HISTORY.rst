@@ -4,6 +4,10 @@ Changelog
 0.4.0 - Unreleased
 ------------------
 
+* Change handling of alternate names, so checking for just one domain when a
+  certificate is valid for several works.
+  [fschulze]
+
 * By default only print messages for domains with errors. Use ``-v`` option
   to print infos for all domains.
   [fschulze]

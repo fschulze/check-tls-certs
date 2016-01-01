@@ -61,22 +61,29 @@ def check(domainnames_certs, expiry_warn=14):
             delta = ((expires - today) // 60 // 10 ** 6) * 60 * 10 ** 6
             msgs.append(
                 ('info', "Valid until %s (%s)." % (expires, delta)))
-        if len(domainnames) == 1:
-            name = cert.get_subject().commonName
-            if name != domain:
-                msgs.append(
-                    ('error', "The requested domain %s doesn't match the certificate domain %s." % (domain, name)))
+        alt_names = set()
         for index in range(cert.get_extension_count()):
             ext = cert.get_extension(index)
-            if ext.get_short_name() != 'subjectAltName':
+            if ext.get_short_name() != b'subjectAltName':
                 continue
-            alt_names = [
+            alt_names.update(
                 x.strip().replace('DNS:', '')
-                for x in str(ext).split(',')]
-            unmatched = domainnames.difference(set(alt_names))
-            if unmatched:
+                for x in str(ext).split(','))
+        msgs.append(
+            ('info', "Alternate names in certificate: %s" % ', '.join(
+                sorted(alt_names))))
+        alt_names.add(cert.get_subject().commonName)
+        unmatched = domainnames.difference(set(alt_names))
+        if unmatched:
+            if len(domainnames) == 1:
+                name = cert.get_subject().commonName
+                if name != domain:
+                    msgs.append(
+                        ('error', "The requested domain %s doesn't match the certificate domain %s." % (domain, name)))
+            else:
                 msgs.append(
-                    ('warning', "Unmatched alternate names %s." % ', '.join(unmatched)))
+                    ('warning', "Unmatched alternate names %s." % ', '.join(
+                        unmatched)))
     return msgs
 
 
