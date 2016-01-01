@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.3.0 - Unreleased
+0.3.0 - 2016-01-01
 ------------------
 
 * Use asyncio to fetch certificates in parallel.
