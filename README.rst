@@ -20,7 +20,9 @@ Usage
       errors.
 
     Options:
-      -f, --file FILE  File to read domains from. One per line.
-      --help           Show this message and exit.
+      -f, --file FILE              File to read domains from. One per line.
+      -v, --verbose / -q, --quiet  Toggle printing of infos for domains with no
+                                   errors or warnings.
+      --help                       Show this message and exit.
 
 When domains are read from a file, lines starting with a ``#`` are ignored.

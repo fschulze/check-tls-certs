@@ -4,6 +4,10 @@ Changelog
 0.4.0 - Unreleased
 ------------------
 
+* By default only print messages for domains with errors. Use ``-v`` option
+  to print infos for all domains.
+  [fschulze]
+
 * Allow comments starting with ``#`` in domain file.
   [fschulze]
 

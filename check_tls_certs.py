@@ -96,8 +96,9 @@ def check_domains(domains, domain_certs):
 
 @click.command()
 @click.option('-f', '--file', metavar='FILE', help='File to read domains from. One per line.')
+@click.option('-v/-q', '--verbose/--quiet', default=False, help='Toggle printing of infos for domains with no errors or warnings.')
 @click.argument('domain', nargs=-1)
-def main(file, domain):
+def main(file, domain, verbose):
     """Checks the TLS certificate for each DOMAIN.
 
        You can add checks for alternative names by separating them with a slash, like example.com/www.example.com.
@@ -110,10 +111,12 @@ def main(file, domain):
     domains = itertools.chain(domains, domain)
     domains = [x.split('/') for x in domains if x and not x.startswith('#')]
     domain_certs = get_domain_certs(domains)
-    warnings = 0
-    errors = 0
+    total_warnings = 0
+    total_errors = 0
     for domainnames, msgs in check_domains(domains, domain_certs):
-        click.echo(', '.join(domainnames))
+        warnings = 0
+        errors = 0
+        domain_msgs = [', '.join(domainnames)]
         for level, msg in msgs:
             if level == 'error':
                 color = 'red'
@@ -126,12 +129,17 @@ def main(file, domain):
             if color:
                 msg = click.style(msg, fg=color)
             msg = "\n".join("    " + m for m in msg.split('\n'))
-            click.echo(msg)
-    msg = "%s error(s), %s warning(s)" % (errors, warnings)
-    if errors:
+            domain_msgs.append(msg)
+        if verbose or warnings or errors:
+            click.echo('\n'.join(domain_msgs))
+        total_errors = total_errors + errors
+        total_warnings = total_warnings + warnings
+    msg = "%s error(s), %s warning(s)" % (total_errors, total_warnings)
+    if total_errors:
         click.echo(click.style(msg, fg="red"))
         sys.exit(4)
-    elif warnings:
+    elif total_warnings:
         click.echo(click.style(msg, fg="yellow"))
         sys.exit(3)
-    click.echo(click.style(msg, fg="green"))
+    if verbose:
+        click.echo(click.style(msg, fg="green"))
