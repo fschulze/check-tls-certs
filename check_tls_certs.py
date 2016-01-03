@@ -71,7 +71,7 @@ def check(domainnames_certs, expiry_warn=14):
                 for x in str(ext).split(','))
         msgs.append(
             ('info', "Alternate names in certificate: %s" % ', '.join(
-                sorted(alt_names))))
+                sorted(alt_names, key=lambda x: list(reversed(x.split('.')))))))
         alt_names.add(cert.get_subject().commonName)
         unmatched = domainnames.difference(set(alt_names))
         if unmatched:
