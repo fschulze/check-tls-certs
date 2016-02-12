@@ -39,12 +39,17 @@ def get_cert_from_domain(domain):
     return (domain, data)
 
 
+def close_event_loop(loop):
+    # just a separate function, so this can be monkeypatched in tests
+    loop.close()
+
+
 def get_domain_certs(domains):
     loop = asyncio.get_event_loop()
     (done, pending) = loop.run_until_complete(asyncio.wait([
         loop.run_in_executor(None, get_cert_from_domain, x)
         for x in itertools.chain(*domains)]))
-    loop.close()
+    close_event_loop(loop)
     return dict(x.result() for x in done)
 
 
