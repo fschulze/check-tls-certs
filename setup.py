@@ -11,6 +11,7 @@ setup(
     version='0.5.0',
     description="Check TLS certificates of domains for expiration dates and more.",
     long_description="\n\n".join([README, HISTORY]),
+    url='https://github.com/fschulze/check-tls-certs',
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: System Administrators",
