@@ -7,7 +7,23 @@ import sys
 import OpenSSL
 
 
+class Domain(str):
+    def __new__(cls, domain):
+        if domain.startswith('!'):
+            name = domain[1:]
+        else:
+            name = domain
+        result = str.__new__(cls, name)
+        if domain.startswith('!'):
+            result.no_fetch = True
+        else:
+            result.no_fetch = False
+        return result
+
+
 def get_cert_from_domain(domain):
+    if domain.no_fetch:
+        return (domain, None)
     try:
         context = ssl.create_default_context()
         context.check_hostname = False
@@ -36,6 +52,8 @@ def check(domainnames_certs, expiry_warn=14):
     msgs = []
     domainnames = set(dnc[0] for dnc in domainnames_certs)
     for domain, cert in domainnames_certs:
+        if cert is None:
+            continue
         if not isinstance(cert, OpenSSL.crypto.X509):
             msgs.append(
                 ('error', "Couldn't fetch certificate for %s:\n%s" % (
@@ -69,12 +87,12 @@ def check(domainnames_certs, expiry_warn=14):
             alt_names.update(
                 x.strip().replace('DNS:', '')
                 for x in str(ext).split(','))
-        msgs.append(
-            ('info', "Alternate names in certificate: %s" % ', '.join(
-                sorted(alt_names, key=lambda x: list(reversed(x.split('.')))))))
         alt_names.add(cert.get_subject().commonName)
-        unmatched = domainnames.difference(set(alt_names))
+        unmatched = domainnames.difference(alt_names)
         if unmatched:
+            msgs.append(
+                ('info', "Alternate names in certificate: %s" % ', '.join(
+                    sorted(alt_names, key=lambda x: list(reversed(x.split('.')))))))
             if len(domainnames) == 1:
                 name = cert.get_subject().commonName
                 if name != domain:
@@ -84,6 +102,14 @@ def check(domainnames_certs, expiry_warn=14):
                 msgs.append(
                     ('warning', "Unmatched alternate names %s." % ', '.join(
                         unmatched)))
+        elif domainnames == alt_names:
+            msgs.append(
+                ('info', "Alternate names match specified domains."))
+        else:
+            unmatched = alt_names.difference(domainnames)
+            msgs.append(
+                ('warning', "More alternate names than specified %s." % ', '.join(
+                    unmatched)))
     return msgs
 
 
@@ -116,7 +142,10 @@ def main(file, domain, verbose):
     if file:
         domains = itertools.chain(domains, (x.strip() for x in open(file, 'r', encoding='utf-8')))
     domains = itertools.chain(domains, domain)
-    domains = [x.split('/') for x in domains if x and not x.startswith('#')]
+    domains = [
+        [Domain(d) for d in x.split('/')]
+        for x in domains
+        if x and not x.startswith('#')]
     domain_certs = get_domain_certs(domains)
     total_warnings = 0
     total_errors = 0

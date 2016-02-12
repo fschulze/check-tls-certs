@@ -26,3 +26,8 @@ Usage
       --help                       Show this message and exit.
 
 When domains are read from a file, lines starting with a ``#`` are ignored.
+
+If you put a ``!`` in front of a domain,
+it is checked to be in the list of alternate names,
+but the TLS certificate for it will not be fetched and checked.
+This is useful for domains that aren't accessible for some reason.

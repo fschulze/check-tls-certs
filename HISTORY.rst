@@ -4,6 +4,10 @@ Changelog
 0.4.0 - Unreleased
 ------------------
 
+* When prefixing a domain with a ``!`` the certificate will not be fetched and
+  checked, but it's name well be checked to be in the list of alternate names.
+  [fschulze]
+
 * Change handling of alternate names, so checking for just one domain when a
   certificate is valid for several works.
   [fschulze]
