@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.4.0 - Unreleased
+0.4.0 - 2016-02-12
 ------------------
 
 * When prefixing a domain with a ``!`` the certificate will not be fetched and
