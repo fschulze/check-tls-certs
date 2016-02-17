@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.5.0 - Unreleased
+0.5.0 - 2016-02-17
 ------------------
 
 * Use UTC time to calculate expiration time.
