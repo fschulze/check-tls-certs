@@ -65,7 +65,7 @@ def check(domainnames_certs, expiry_warn=14):
                     domain, cert)))
             continue
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
-        today = datetime.datetime.now()
+        today = datetime.datetime.utcnow()
         msgs.append(
             ('info', "Issued by: %s" % cert.get_issuer().commonName))
         sig_alg = cert.get_signature_algorithm()

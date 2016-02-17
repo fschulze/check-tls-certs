@@ -4,6 +4,8 @@ Changelog
 0.5.0 - Unreleased
 ------------------
 
+* Use UTC time to calculate expiration time.
+  [fschulze]
 
 
 0.4.0 - 2016-02-12
