@@ -19,9 +19,11 @@ def event_loop_closing():
 def test_arg(monkeypatch):
     from check_tls_certs import main
     l = []
-    monkeypatch.setattr("check_tls_certs.check", lambda x: l.append(x) or [])
+    monkeypatch.setattr(
+        "check_tls_certs.check",
+        lambda x: l.append(x) or ([], None))
     runner = CliRunner()
-    result = runner.invoke(main, ['-v', 'example.com/www.example.com'])
+    result = runner.invoke(main, ['-vv', 'example.com/www.example.com'])
     assert result.exit_code == 0
     assert [[d for d, c in x] for x in l] == [
         ['example.com', 'www.example.com']]
@@ -33,11 +35,13 @@ def test_arg(monkeypatch):
 def test_file(monkeypatch, tmpdir):
     from check_tls_certs import main
     l = []
-    monkeypatch.setattr("check_tls_certs.check", lambda x: l.append(x) or [])
+    monkeypatch.setattr(
+        "check_tls_certs.check",
+        lambda x: l.append(x) or ([], None))
     f = tmpdir.join("domains.txt")
     f.write_binary(b"example.com/www.example.com\nfoo.com\n")
     runner = CliRunner()
-    result = runner.invoke(main, ['-v', '-f', f.strpath])
+    result = runner.invoke(main, ['-vv', '-f', f.strpath])
     assert result.exit_code == 0
     assert [[d for d, c in x] for x in l] == [
         ['example.com', 'www.example.com'],
