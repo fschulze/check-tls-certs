@@ -7,6 +7,11 @@ Changelog
 * Use UTC time to calculate expiration time.
   [fschulze]
 
+* Add another verbosity level (and remove ``-q/--quite``). By default nothing
+  is printed except when there are errors. The first level ``-v`` always
+  prints the earliest expiration date. The second level ``-vv`` prints all the
+  info.
+
 
 0.4.0 - 2016-02-12
 ------------------

@@ -56,6 +56,7 @@ def get_domain_certs(domains):
 def check(domainnames_certs, expiry_warn=14):
     msgs = []
     domainnames = set(dnc[0] for dnc in domainnames_certs)
+    earliest_expiration = None
     for domain, cert in domainnames_certs:
         if cert is None:
             continue
@@ -65,6 +66,8 @@ def check(domainnames_certs, expiry_warn=14):
                     domain, cert)))
             continue
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
+        if earliest_expiration is None or expires < earliest_expiration:
+            earliest_expiration = expires
         today = datetime.datetime.utcnow()
         msgs.append(
             ('info', "Issued by: %s" % cert.get_issuer().commonName))
@@ -115,7 +118,7 @@ def check(domainnames_certs, expiry_warn=14):
             msgs.append(
                 ('warning', "More alternate names than specified %s." % ', '.join(
                     unmatched)))
-    return msgs
+    return (msgs, earliest_expiration)
 
 
 def check_domains(domains, domain_certs):
@@ -124,17 +127,21 @@ def check_domains(domains, domain_certs):
         domainnames_certs = [(dn, domain_certs[dn]) for dn in domainnames]
         msgs = []
         seen = set()
-        for level, msg in check(domainnames_certs):
+        earliest_expiration = None
+        (dmsgs, expiration) = check(domainnames_certs)
+        for level, msg in dmsgs:
+            if earliest_expiration is None or expiration < earliest_expiration:
+                earliest_expiration = expiration
             if msg not in seen:
                 seen.add(msg)
                 msgs.append((level, msg))
-        result.append((domainnames, msgs))
+        result.append((domainnames, msgs, earliest_expiration))
     return result
 
 
 @click.command()
 @click.option('-f', '--file', metavar='FILE', help='File to read domains from. One per line.')
-@click.option('-v/-q', '--verbose/--quiet', default=False, help='Toggle printing of infos for domains with no errors or warnings.')
+@click.option('-v', '--verbose', count=True, help='Increase verbosity. Can be used several times. Currently max verbosity is 2.')
 @click.argument('domain', nargs=-1)
 def main(file, domain, verbose):
     """Checks the TLS certificate for each DOMAIN.
@@ -154,7 +161,10 @@ def main(file, domain, verbose):
     domain_certs = get_domain_certs(domains)
     total_warnings = 0
     total_errors = 0
-    for domainnames, msgs in check_domains(domains, domain_certs):
+    earliest_expiration = None
+    for domainnames, msgs, expiration in check_domains(domains, domain_certs):
+        if earliest_expiration is None or expiration < earliest_expiration:
+            earliest_expiration = expiration
         warnings = 0
         errors = 0
         domain_msgs = [', '.join(domainnames)]
@@ -171,11 +181,15 @@ def main(file, domain, verbose):
                 msg = click.style(msg, fg=color)
             msg = "\n".join("    " + m for m in msg.split('\n'))
             domain_msgs.append(msg)
-        if verbose or warnings or errors:
+        if (verbose > 1) or warnings or errors:
             click.echo('\n'.join(domain_msgs))
         total_errors = total_errors + errors
         total_warnings = total_warnings + warnings
     msg = "%s error(s), %s warning(s)" % (total_errors, total_warnings)
+    today = datetime.datetime.utcnow()
+    if earliest_expiration:
+        msg += "\nEarliest expiration on %s (%s)." % (
+            earliest_expiration, earliest_expiration - today)
     if total_errors:
         click.echo(click.style(msg, fg="red"))
         sys.exit(4)
