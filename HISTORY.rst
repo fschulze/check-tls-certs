@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.6.0 - Unreleased
+0.6.0 - 2016-02-20
 ------------------
 
 * Fix comparison if there is no expiration time.
