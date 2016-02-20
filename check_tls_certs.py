@@ -66,8 +66,9 @@ def check(domainnames_certs, expiry_warn=14):
                     domain, cert)))
             continue
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
-        if earliest_expiration is None or expires < earliest_expiration:
-            earliest_expiration = expires
+        if expires:
+            if earliest_expiration is None or expires < earliest_expiration:
+                earliest_expiration = expires
         today = datetime.datetime.utcnow()
         msgs.append(
             ('info', "Issued by: %s" % cert.get_issuer().commonName))
@@ -130,8 +131,9 @@ def check_domains(domains, domain_certs):
         earliest_expiration = None
         (dmsgs, expiration) = check(domainnames_certs)
         for level, msg in dmsgs:
-            if earliest_expiration is None or expiration < earliest_expiration:
-                earliest_expiration = expiration
+            if expiration:
+                if earliest_expiration is None or expiration < earliest_expiration:
+                    earliest_expiration = expiration
             if msg not in seen:
                 seen.add(msg)
                 msgs.append((level, msg))
@@ -163,8 +165,9 @@ def main(file, domain, verbose):
     total_errors = 0
     earliest_expiration = None
     for domainnames, msgs, expiration in check_domains(domains, domain_certs):
-        if earliest_expiration is None or expiration < earliest_expiration:
-            earliest_expiration = expiration
+        if expiration:
+            if earliest_expiration is None or expiration < earliest_expiration:
+                earliest_expiration = expiration
         warnings = 0
         errors = 0
         domain_msgs = [', '.join(domainnames)]
