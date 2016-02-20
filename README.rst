@@ -27,7 +27,10 @@ Usage
 
 When domains are read from a file, lines starting with a ``#`` are ignored.
 
-If you put a ``!`` in front of a domain,
-it is checked to be in the list of alternate names,
+If a domain starts with a ``!`` it is checked to be in the list of alternate names,
 but the TLS certificate for it will not be fetched and checked.
 This is useful for domains that aren't accessible for some reason.
+
+The default port 443,
+to which the connection is made to fetch the certificate,
+can be changed by adding it to the domain separated by a colon like ``example.com:1234``.

@@ -13,11 +13,18 @@ class Domain(str):
             name = domain[1:]
         else:
             name = domain
+        host = name
+        port = 443
+        if ':' in name:
+            host, port = name.split(':')
+            port = int(port)
         result = str.__new__(cls, name)
         if domain.startswith('!'):
             result.no_fetch = True
         else:
             result.no_fetch = False
+        result.host = host
+        result.port = port
         return result
 
 
@@ -28,7 +35,7 @@ def get_cert_from_domain(domain):
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-        with ssl.create_connection((domain, 443)) as sock:
+        with ssl.create_connection((domain.host, domain.port)) as sock:
             with context.wrap_socket(sock, server_hostname=domain) as sslsock:
                 dercert = sslsock.getpeercert(True)
         data = ssl.DER_cert_to_PEM_cert(dercert)
@@ -55,7 +62,7 @@ def get_domain_certs(domains):
 
 def check(domainnames_certs, expiry_warn=14):
     msgs = []
-    domainnames = set(dnc[0] for dnc in domainnames_certs)
+    domainnames = set(dnc[0].host for dnc in domainnames_certs)
     earliest_expiration = None
     for domain, cert in domainnames_certs:
         if cert is None:
@@ -104,7 +111,7 @@ def check(domainnames_certs, expiry_warn=14):
                     sorted(alt_names, key=lambda x: list(reversed(x.split('.')))))))
             if len(domainnames) == 1:
                 name = cert.get_subject().commonName
-                if name != domain:
+                if name != domain.host:
                     msgs.append(
                         ('error', "The requested domain %s doesn't match the certificate domain %s." % (domain, name)))
             else:

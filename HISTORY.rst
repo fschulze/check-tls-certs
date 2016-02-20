@@ -7,6 +7,8 @@ Changelog
 * Fix comparison if there is no expiration time.
   [fschulze]
 
+* Allow port in domain name, to which the ssl connection is made instead of the
+  default 443, be specified.
 
 0.5.0 - 2016-02-17
 ------------------
