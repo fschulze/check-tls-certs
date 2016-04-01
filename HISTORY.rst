@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.7.0 - Unreleased
+------------------
+
+* Mark certificates from staging server with error.
+  [fschulze]
+
+
 0.6.0 - 2016-02-20
 ------------------
 

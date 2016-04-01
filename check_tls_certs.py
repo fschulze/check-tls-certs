@@ -77,8 +77,11 @@ def check(domainnames_certs, expiry_warn=14):
             if earliest_expiration is None or expires < earliest_expiration:
                 earliest_expiration = expires
         today = datetime.datetime.utcnow()
+        issued_level = "info"
+        if cert.get_issuer().commonName.lower() == "happy hacker fake ca":
+            issued_level = "error"
         msgs.append(
-            ('info', "Issued by: %s" % cert.get_issuer().commonName))
+            (issued_level, "Issued by: %s" % cert.get_issuer().commonName))
         sig_alg = cert.get_signature_algorithm()
         if sig_alg.startswith(b'sha1'):
             msgs.append(
