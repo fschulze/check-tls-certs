@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.7.0 - Unreleased
+0.7.0 - 2016-05-09
 ------------------
 
 * Get current time once to avoid duplicate expiry messages.
