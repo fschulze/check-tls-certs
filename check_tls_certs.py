@@ -64,6 +64,7 @@ def check(domainnames_certs, expiry_warn=14):
     msgs = []
     domainnames = set(dnc[0].host for dnc in domainnames_certs)
     earliest_expiration = None
+    today = datetime.datetime.utcnow()
     for domain, cert in domainnames_certs:
         if cert is None:
             continue
@@ -76,7 +77,6 @@ def check(domainnames_certs, expiry_warn=14):
         if expires:
             if earliest_expiration is None or expires < earliest_expiration:
                 earliest_expiration = expires
-        today = datetime.datetime.utcnow()
         issued_level = "info"
         if cert.get_issuer().commonName.lower() == "happy hacker fake ca":
             issued_level = "error"

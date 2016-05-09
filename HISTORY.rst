@@ -4,6 +4,9 @@ Changelog
 0.7.0 - Unreleased
 ------------------
 
+* Get current time once to avoid duplicate expiry messages.
+  [fschulze]
+
 * Mark certificates from staging server with error.
   [fschulze]
 
