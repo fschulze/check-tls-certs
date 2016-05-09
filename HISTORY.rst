@@ -4,6 +4,8 @@ Changelog
 0.8.0 - Unreleased
 ------------------
 
+* Validate the certificate chain sent by the server.
+  [fschulze]
 
 
 0.7.0 - 2016-05-09

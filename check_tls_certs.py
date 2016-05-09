@@ -2,7 +2,7 @@ import asyncio
 import click
 import datetime
 import itertools
-import ssl
+import socket
 import sys
 import OpenSSL
 
@@ -32,15 +32,12 @@ def get_cert_from_domain(domain):
     if domain.no_fetch:
         return (domain, None)
     try:
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-        with ssl.create_connection((domain.host, domain.port)) as sock:
-            with context.wrap_socket(sock, server_hostname=domain) as sslsock:
-                dercert = sslsock.getpeercert(True)
-        data = ssl.DER_cert_to_PEM_cert(dercert)
-        data = OpenSSL.crypto.load_certificate(
-            OpenSSL.crypto.FILETYPE_PEM, data)
+        ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+        sock = OpenSSL.SSL.Connection(ctx, socket.socket())
+        sock.set_tlsext_host_name(domain.encode('ascii'))
+        sock.connect((domain.host, domain.port))
+        sock.do_handshake()
+        data = sock.get_peer_cert_chain()
     except Exception as e:
         data = str(e)
     return (domain, data)
@@ -65,23 +62,30 @@ def check(domainnames_certs, expiry_warn=14):
     domainnames = set(dnc[0].host for dnc in domainnames_certs)
     earliest_expiration = None
     today = datetime.datetime.utcnow()
-    for domain, cert in domainnames_certs:
-        if cert is None:
+    for domain, cert_chain in domainnames_certs:
+        if cert_chain is None:
             continue
-        if not isinstance(cert, OpenSSL.crypto.X509):
+        if not any(isinstance(cert, OpenSSL.crypto.X509) for cert in cert_chain):
             msgs.append(
-                ('error', "Couldn't fetch certificate for %s:\n%s" % (
-                    domain, cert)))
+                ('error', "Couldn't fetch certificate for %s." % domain))
             continue
+        cert = cert_chain[0]
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
         if expires:
             if earliest_expiration is None or expires < earliest_expiration:
                 earliest_expiration = expires
         issued_level = "info"
-        if cert.get_issuer().commonName.lower() == "happy hacker fake ca":
+        issuer = cert.get_issuer().commonName
+        if issuer.lower() == "happy hacker fake ca":
             issued_level = "error"
         msgs.append(
-            (issued_level, "Issued by: %s" % cert.get_issuer().commonName))
+            (issued_level, "Issued by: %s" % issuer))
+        if len(cert_chain) > 1:
+            sign_cert = cert_chain[1]
+            subject = sign_cert.get_subject().commonName
+            if issuer != subject:
+                msgs.append(
+                    ('error', "The certificate sign chain subject '%s' doesn't match the issuer '%s'." % (subject, issuer)))
         sig_alg = cert.get_signature_algorithm()
         if sig_alg.startswith(b'sha1'):
             msgs.append(
