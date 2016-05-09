@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.8.0 - Unreleased
+0.8.0 - 2016-05-09
 ------------------
 
 * Validate the certificate chain sent by the server.
