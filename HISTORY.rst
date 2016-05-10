@@ -4,6 +4,10 @@ Changelog
 0.9.0 - Unreleased
 ------------------
 
+* Sort domain names in output.
+  [fschulze]
+
+
 0.8.0 - 2016-05-09
 ------------------
 

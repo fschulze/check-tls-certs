@@ -57,6 +57,10 @@ def get_domain_certs(domains):
     return dict(x.result() for x in done)
 
 
+def domain_key(d):
+    return tuple(reversed(d.split('.')))
+
+
 def check(domainnames_certs, expiry_warn=14):
     msgs = []
     domainnames = set(dnc[0].host for dnc in domainnames_certs)
@@ -115,7 +119,7 @@ def check(domainnames_certs, expiry_warn=14):
         if unmatched:
             msgs.append(
                 ('info', "Alternate names in certificate: %s" % ', '.join(
-                    sorted(alt_names, key=lambda x: list(reversed(x.split('.')))))))
+                    sorted(alt_names, key=domain_key))))
             if len(domainnames) == 1:
                 name = cert.get_subject().commonName
                 if name != domain.host:
@@ -124,7 +128,7 @@ def check(domainnames_certs, expiry_warn=14):
             else:
                 msgs.append(
                     ('warning', "Unmatched alternate names %s." % ', '.join(
-                        unmatched)))
+                        sorted(unmatched, key=domain_key))))
         elif domainnames == alt_names:
             msgs.append(
                 ('info', "Alternate names match specified domains."))
@@ -132,7 +136,7 @@ def check(domainnames_certs, expiry_warn=14):
             unmatched = alt_names.difference(domainnames)
             msgs.append(
                 ('warning', "More alternate names than specified %s." % ', '.join(
-                    unmatched)))
+                    sorted(unmatched, key=domain_key))))
     return (msgs, earliest_expiration)
 
 
