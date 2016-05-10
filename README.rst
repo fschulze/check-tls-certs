@@ -26,6 +26,8 @@ Usage
       --help                       Show this message and exit.
 
 When domains are read from a file, lines starting with a ``#`` are ignored.
+If a line in a file ends in a ``/``, it is joined with the next line.
+This allows you to group many domains using the same certificate.
 
 If a domain starts with a ``!`` it is checked to be in the list of alternate names,
 but the TLS certificate for it will not be fetched and checked.

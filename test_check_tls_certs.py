@@ -39,14 +39,16 @@ def test_file(monkeypatch, tmpdir):
         "check_tls_certs.check",
         lambda x: l.append(x) or ([], None))
     f = tmpdir.join("domains.txt")
-    f.write_binary(b"example.com/www.example.com\nfoo.com\n")
+    f.write_binary(b"example.com/www.example.com\nfoo.com\nbar.com/\n    #none.bar.com\n    www.bar.com")
     runner = CliRunner()
     result = runner.invoke(main, ['-vv', '-f', f.strpath])
     assert result.exit_code == 0
     assert [[d for d, c in x] for x in l] == [
         ['example.com', 'www.example.com'],
-        ['foo.com']]
+        ['foo.com'],
+        ['bar.com', 'www.bar.com']]
     assert result.output == (
         'example.com, www.example.com\n'
         'foo.com\n'
+        'bar.com, www.bar.com\n'
         '0 error(s), 0 warning(s)\n')

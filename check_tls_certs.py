@@ -159,6 +159,23 @@ def check_domains(domains, domain_certs):
     return result
 
 
+def domains_from_file(file):
+    if not file:
+        return
+    with open(file, 'r', encoding='utf-8') as f:
+        current = []
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if line.endswith('/'):
+                current.append(line)
+                continue
+            current.append(line)
+            yield "".join(current)
+            current = []
+
+
 @click.command()
 @click.option('-f', '--file', metavar='FILE', help='File to read domains from. One per line.')
 @click.option('-v', '--verbose', count=True, help='Increase verbosity. Can be used several times. Currently max verbosity is 2.')
@@ -170,9 +187,7 @@ def main(file, domain, verbose):
 
        Exits with return code 3 when there are warnings and code 4 when there are errors.
     """
-    domains = []
-    if file:
-        domains = itertools.chain(domains, (x.strip() for x in open(file, 'r', encoding='utf-8')))
+    domains = domains_from_file(file)
     domains = itertools.chain(domains, domain)
     domains = [
         [Domain(d) for d in x.split('/')]

@@ -4,6 +4,10 @@ Changelog
 0.9.0 - Unreleased
 ------------------
 
+* If a line ends in a ``/`` it is joined with the next line when reading
+  domains from a file.
+  [fschulze]
+
 * Sort domain names in output.
   [fschulze]
 
