@@ -4,6 +4,21 @@ check-tls-certs
 Check TLS certificates of domains for expiration dates and more.
 
 
+Installation
+------------
+
+It's recommended to use Python 3.5 or newer on macOS,
+because DNS lookups work in parallel and thus much faster when checking several domains.
+
+Best installed via `pipsi`_::
+
+    % pipsi install check-tls-certs
+
+Or some other way to install a python package with included scripts.
+
+.. _pipsi: https://pypi.python.org/pypi/pipsi
+
+
 Usage
 -----
 
