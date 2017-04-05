@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.9.1 - 2017-04-05
+------------------
+
+* Re-release because of premature upload.
+  [fschulze]
+
+
 0.9.0 - 2017-04-05
 ------------------
 

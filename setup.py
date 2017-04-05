@@ -8,17 +8,17 @@ HISTORY = open(os.path.abspath('HISTORY.rst')).read()
 
 setup(
     name='check-tls-certs',
-    version='0.9.0',
+    version='0.9.1',
     description="Check TLS certificates of domains for expiration dates and more.",
     long_description="\n\n".join([README, HISTORY]),
     url='https://github.com/fschulze/check-tls-certs',
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5"],
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6"],
     install_requires=[
         'click',
         'pyOpenSSL'],
