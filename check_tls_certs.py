@@ -2,6 +2,7 @@ import asyncio
 import click
 import datetime
 import itertools
+import select
 import socket
 import sys
 import OpenSSL
@@ -34,12 +35,18 @@ def get_cert_from_domain(domain):
     try:
         ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
         sock = OpenSSL.SSL.Connection(ctx, socket.socket())
+        sock.settimeout(5)
         sock.set_tlsext_host_name(domain.encode('ascii'))
         sock.connect((domain.host, domain.port))
-        sock.do_handshake()
+        while True:
+            try:
+                sock.do_handshake()
+                break
+            except OpenSSL.SSL.WantReadError:
+                select.select([sock], [], [])
         data = sock.get_peer_cert_chain()
     except Exception as e:
-        data = str(e)
+        data = repr(e)
     return (domain, data)
 
 
@@ -71,7 +78,7 @@ def check(domainnames_certs, expiry_warn=14):
             continue
         if not any(isinstance(cert, OpenSSL.crypto.X509) for cert in cert_chain):
             msgs.append(
-                ('error', "Couldn't fetch certificate for %s." % domain))
+                ('error', "Couldn't fetch certificate for %s.\n%s" % (domain, cert_chain)))
             continue
         cert = cert_chain[0]
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')

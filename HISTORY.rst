@@ -1,8 +1,11 @@
 Changelog
 =========
 
-0.9.0 - Unreleased
+0.9.0 - 2017-04-05
 ------------------
+
+* Add 5 second timeout and print more detailed error messages.
+  [fschulze]
 
 * If a line ends in a ``/`` it is joined with the next line when reading
   domains from a file.
