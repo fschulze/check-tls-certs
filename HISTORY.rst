@@ -4,6 +4,9 @@ Changelog
 0.10.0 - Unreleased
 -------------------
 
+* Allow specifying a host used for the actual connection using ``|``.
+  [fschulze]
+
 * Re-raise actual connection errors, so the exit code of the script indicates
   a failure.
   [fschulze]

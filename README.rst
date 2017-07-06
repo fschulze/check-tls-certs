@@ -51,3 +51,6 @@ This is useful for domains that aren't accessible for some reason.
 The default port 443,
 to which the connection is made to fetch the certificate,
 can be changed by adding it to the domain separated by a colon like ``example.com:1234``.
+
+You can change the actually used host used for the connection by separating it with a ``|`` symbol,
+for example ``example.com|192.168.0.1`` will use the IP ``192.168.0.1`` to connect.

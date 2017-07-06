@@ -19,12 +19,17 @@ class Domain(str):
         if ':' in name:
             host, port = name.split(':')
             port = int(port)
+        connection_host = host
+        if '|' in name:
+            host, connection_host = name.split('|')
+            name = host
         result = str.__new__(cls, name)
         if domain.startswith('!'):
             result.no_fetch = True
         else:
             result.no_fetch = False
         result.host = host
+        result.connection_host = connection_host
         result.port = port
         return result
 
@@ -37,7 +42,7 @@ def get_cert_from_domain(domain):
         sock = OpenSSL.SSL.Connection(ctx, socket.socket())
         sock.settimeout(5)
         sock.set_tlsext_host_name(domain.encode('ascii'))
-        sock.connect((domain.host, domain.port))
+        sock.connect((domain.connection_host, domain.port))
         while True:
             try:
                 sock.do_handshake()
