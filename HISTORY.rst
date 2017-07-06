@@ -4,6 +4,9 @@ Changelog
 0.10.0 - Unreleased
 -------------------
 
+* Re-raise actual connection errors, so the exit code of the script indicates
+  a failure.
+  [fschulze]
 
 
 0.9.1 - 2017-04-05

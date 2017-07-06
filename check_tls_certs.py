@@ -45,6 +45,8 @@ def get_cert_from_domain(domain):
             except OpenSSL.SSL.WantReadError:
                 select.select([sock], [], [])
         data = sock.get_peer_cert_chain()
+    except socket.gaierror:
+        raise
     except Exception as e:
         data = repr(e)
     return (domain, data)
