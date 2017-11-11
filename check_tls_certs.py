@@ -4,6 +4,7 @@ import datetime
 import itertools
 import select
 import socket
+import ssl
 import sys
 import OpenSSL
 
@@ -87,6 +88,18 @@ def check(domainnames_certs, expiry_warn=14):
             msgs.append(
                 ('error', "Couldn't fetch certificate for %s.\n%s" % (domain, cert_chain)))
             continue
+        ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+        ctx.set_default_verify_paths()
+        store = ctx.get_cert_store()
+        for index, cert in reversed(list(enumerate(cert_chain))):
+            sc = OpenSSL.crypto.X509StoreContext(store, cert)
+            try:
+                sc.verify_certificate()
+            except OpenSSL.crypto.X509StoreContextError as e:
+                msgs.append(
+                    ('error', "Validation error '%s'." % e))
+            if index > 0:
+                store.add_cert(cert)
         cert = cert_chain[0]
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
         if expires:

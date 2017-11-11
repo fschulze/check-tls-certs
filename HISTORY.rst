@@ -4,6 +4,9 @@ Changelog
 0.10.0 - Unreleased
 -------------------
 
+* Validate the certificate chain.
+  [fschulze]
+
 * Allow specifying a host used for the actual connection using ``|``.
   [fschulze]
 
