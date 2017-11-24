@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.10.0 - Unreleased
+0.10.0 - 2017-11-24
 -------------------
 
 * Validate the certificate chain.
