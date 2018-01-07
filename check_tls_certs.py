@@ -9,6 +9,9 @@ import traceback
 import OpenSSL
 
 
+default_expiry_warn = 14
+
+
 class DomainParseError(Exception):
     pass
 
@@ -98,11 +101,25 @@ def domain_key(d):
     return tuple(reversed(d.split('.')))
 
 
-def check(domainnames_certs, expiry_warn=14):
+def validate_certificate_chain(cert_chain, msgs):
+    ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+    ctx.set_default_verify_paths()
+    cert_store = ctx.get_cert_store()
+    for index, cert in reversed(list(enumerate(cert_chain))):
+        sc = OpenSSL.crypto.X509StoreContext(cert_store, cert)
+        try:
+            sc.verify_certificate()
+        except OpenSSL.crypto.X509StoreContextError as e:
+            msgs.append(
+                ('error', "Validation error '%s'." % e))
+        if index > 0:
+            cert_store.add_cert(cert)
+
+
+def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
     msgs = []
     domainnames = set(dnc[0].host for dnc in domainnames_certs)
     earliest_expiration = None
-    today = datetime.datetime.utcnow()
     for domain, cert_chain in domainnames_certs:
         if cert_chain is None:
             continue
@@ -110,18 +127,7 @@ def check(domainnames_certs, expiry_warn=14):
             msgs.append(
                 ('error', "Couldn't fetch certificate for %s.\n%s" % (domain, cert_chain)))
             continue
-        ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
-        ctx.set_default_verify_paths()
-        store = ctx.get_cert_store()
-        for index, cert in reversed(list(enumerate(cert_chain))):
-            sc = OpenSSL.crypto.X509StoreContext(store, cert)
-            try:
-                sc.verify_certificate()
-            except OpenSSL.crypto.X509StoreContextError as e:
-                msgs.append(
-                    ('error', "Validation error '%s'." % e))
-            if index > 0:
-                store.add_cert(cert)
+        validate_certificate_chain(cert_chain, msgs)
         cert = cert_chain[0]
         expires = datetime.datetime.strptime(cert.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
         if expires:
@@ -143,16 +149,16 @@ def check(domainnames_certs, expiry_warn=14):
         if sig_alg.startswith(b'sha1'):
             msgs.append(
                 ('error', "Unsecure signature algorithm %s" % sig_alg))
-        if expires < today:
+        if expires < utcnow:
             msgs.append(
                 ('error', "The certificate has expired on %s." % expires))
-        elif expires < (today + datetime.timedelta(days=expiry_warn)):
+        elif expires < (utcnow + datetime.timedelta(days=expiry_warn)):
             msgs.append(
                 ('warning', "The certificate expires on %s (%s)." % (
-                    expires, expires - today)))
+                    expires, expires - utcnow)))
         else:
             # rounded delta
-            delta = ((expires - today) // 60 // 10 ** 6) * 60 * 10 ** 6
+            delta = ((expires - utcnow) // 60 // 10 ** 6) * 60 * 10 ** 6
             msgs.append(
                 ('info', "Valid until %s (%s)." % (expires, delta)))
         alt_names = set()
@@ -189,14 +195,14 @@ def check(domainnames_certs, expiry_warn=14):
     return (msgs, earliest_expiration)
 
 
-def check_domains(domains, domain_certs):
+def check_domains(domains, domain_certs, utcnow):
     result = []
     for domainnames in domains:
         domainnames_certs = [(dn, domain_certs[dn]) for dn in domainnames]
         msgs = []
         seen = set()
         earliest_expiration = None
-        (dmsgs, expiration) = check(domainnames_certs)
+        (dmsgs, expiration) = check(domainnames_certs, utcnow)
         for level, msg in dmsgs:
             if expiration:
                 if earliest_expiration is None or expiration < earliest_expiration:
@@ -270,7 +276,8 @@ def main(file, domain, verbose):
     total_warnings = 0
     total_errors = 0
     earliest_expiration = None
-    for domainnames, msgs, expiration in check_domains(domains, domain_certs):
+    utcnow = datetime.datetime.utcnow()
+    for domainnames, msgs, expiration in check_domains(domains, domain_certs, utcnow):
         if expiration:
             if earliest_expiration is None or expiration < earliest_expiration:
                 earliest_expiration = expiration
@@ -295,10 +302,9 @@ def main(file, domain, verbose):
         total_errors = total_errors + errors
         total_warnings = total_warnings + warnings
     msg = "%s error(s), %s warning(s)" % (total_errors, total_warnings)
-    today = datetime.datetime.utcnow()
     if earliest_expiration:
         msg += "\nEarliest expiration on %s (%s)." % (
-            earliest_expiration, earliest_expiration - today)
+            earliest_expiration, earliest_expiration - utcnow)
     if total_errors:
         click.echo(click.style(msg, fg="red"))
         sys.exit(4)

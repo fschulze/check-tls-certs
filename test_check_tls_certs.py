@@ -1,6 +1,8 @@
 from click.testing import CliRunner
 from io import StringIO
 import pytest
+import re
+import subprocess
 
 
 @pytest.yield_fixture(scope="session", autouse=True)
@@ -17,6 +19,42 @@ def event_loop_closing():
         l.close()
 
 
+@pytest.fixture
+def no_chain_validation(monkeypatch):
+    monkeypatch.setattr(
+        "check_tls_certs.validate_certificate_chain",
+        lambda c, m: None)
+
+
+@pytest.fixture
+def makecert():
+    import OpenSSL
+
+    def makecert(cn='example.com', days=365):
+        result = subprocess.check_output([
+            'openssl',
+            'req', '-x509',
+            '-nodes',
+            '-newkey', 'rsa:1024',
+            '-days', '%s' % days,
+            '-subj', '/C=DE/ST=Foo/L=Bar/O=Foo LTD/OU=Org/CN=%s' % cn])
+        m = re.search(
+            b'(-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----)',
+            result,
+            flags=re.DOTALL)
+        return OpenSSL.crypto.load_certificate(
+            OpenSSL.crypto.FILETYPE_PEM,
+            m.group(1))
+
+    return makecert
+
+
+@pytest.fixture
+def utcnow():
+    import datetime
+    return datetime.datetime.utcnow() + datetime.timedelta(seconds=1)
+
+
 def test_arg(monkeypatch):
     from check_tls_certs import main
     domain_fetches = []
@@ -26,7 +64,7 @@ def test_arg(monkeypatch):
     domain_checks = []
     monkeypatch.setattr(
         "check_tls_certs.check",
-        lambda x: domain_checks.append(x) or ([], None))
+        lambda x, u: domain_checks.append(x) or ([], None))
     runner = CliRunner()
     result = runner.invoke(main, ['-vv', 'example.com/www.example.com'])
     assert result.exit_code == 0
@@ -46,7 +84,7 @@ def test_file(monkeypatch, tmpdir):
     domain_checks = []
     monkeypatch.setattr(
         "check_tls_certs.check",
-        lambda x: domain_checks.append(x) or ([], None))
+        lambda x, u: domain_checks.append(x) or ([], None))
     f = tmpdir.join("domains.txt")
     f.write_binary(b"example.com/www.example.com\nfoo.com\nbar.com/\n    #none.bar.com\n    www.bar.com")
     runner = CliRunner()
@@ -149,3 +187,53 @@ def test_get_cert_from_domain_other_error(monkeypatch):
     d = Domain('foo')
     result = get_cert_from_domain(d)
     assert result == (d, "ValueError: ham")
+
+
+def test_check_self_signed(makecert, utcnow):
+    from check_tls_certs import Domain
+    from check_tls_certs import check
+    d = Domain('example.com')
+    cert = makecert()
+    (msgs, earliest_expiration) = check([(d, [cert])], utcnow)
+    (errmsg,) = [m for m in msgs if m[0] == 'error']
+    assert 'Validation error' in errmsg[1]
+    assert 'self signed certificate' in errmsg[1]
+
+
+@pytest.mark.usefixtures('no_chain_validation')
+def test_expiration_far_in_future(makecert, utcnow):
+    from check_tls_certs import Domain
+    from check_tls_certs import check
+    d = Domain('example.com')
+    cert = makecert()
+    (msgs, earliest_expiration) = check([(d, [cert])], utcnow)
+    (msg,) = [m for m in msgs if m[1].startswith('Valid until')]
+    assert '(364 days,' in msg[1]
+    assert (earliest_expiration - utcnow).days == 364
+
+
+@pytest.mark.usefixtures('no_chain_validation')
+def test_expiration_within_warning_range(makecert, utcnow):
+    from check_tls_certs import Domain
+    from check_tls_certs import check
+    from check_tls_certs import default_expiry_warn
+    d = Domain('example.com')
+    cert = makecert(days=default_expiry_warn)
+    (msgs, earliest_expiration) = check([(d, [cert])], utcnow)
+    (msg,) = [m for m in msgs if 'certificate expires on' in m[1]]
+    assert '(%s days,' % (default_expiry_warn - 1) in msg[1]
+    assert (earliest_expiration - utcnow).days == (default_expiry_warn - 1)
+
+
+@pytest.mark.usefixtures('no_chain_validation')
+def test_expiration_expired(makecert, utcnow):
+    from check_tls_certs import Domain
+    from check_tls_certs import check
+    import datetime
+    d = Domain('example.com')
+    cert = makecert(days=1)
+    utcnow = utcnow + datetime.timedelta(days=1)
+    (msgs, earliest_expiration) = check([(d, [cert])], utcnow)
+    (msg,) = [m for m in msgs if 'certificate has expired on' in m[1]]
+    assert msg[1].startswith('The certificate has expired on')
+    assert (earliest_expiration - utcnow).days < 0
