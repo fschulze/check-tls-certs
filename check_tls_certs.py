@@ -5,7 +5,12 @@ import itertools
 import select
 import socket
 import sys
+import traceback
 import OpenSSL
+
+
+class DomainParseError(Exception):
+    pass
 
 
 class Domain(str):
@@ -18,7 +23,10 @@ class Domain(str):
         port = 443
         if ':' in name:
             host, port = name.split(':')
-            port = int(port)
+            try:
+                port = int(port)
+            except ValueError:
+                raise DomainParseError("Couldn't parse '%s', port '%s' is not an integer" % (domain, port))
         connection_host = host
         if '|' in name:
             host, connection_host = name.split('|')
@@ -34,26 +42,41 @@ class Domain(str):
         return result
 
 
+class CertDomains(list):
+    def __init__(self, domain_definitions):
+        for d in domain_definitions.split('/'):
+            self.append(Domain(d))
+
+
+def fatal(msg):
+    click.echo(click.style(msg, fg="red"), err=True)
+    sys.exit(5)
+
+
+def _get_cert_from_domain(domain):
+    ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+    sock = OpenSSL.SSL.Connection(ctx, socket.socket())
+    sock.settimeout(5)
+    sock.set_tlsext_host_name(domain.encode('ascii'))
+    sock.connect((domain.connection_host, domain.port))
+    while True:
+        try:
+            sock.do_handshake()
+            break
+        except OpenSSL.SSL.WantReadError:
+            select.select([sock], [], [])
+    return sock.get_peer_cert_chain()
+
+
 def get_cert_from_domain(domain):
     if domain.no_fetch:
         return (domain, None)
     try:
-        ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
-        sock = OpenSSL.SSL.Connection(ctx, socket.socket())
-        sock.settimeout(5)
-        sock.set_tlsext_host_name(domain.encode('ascii'))
-        sock.connect((domain.connection_host, domain.port))
-        while True:
-            try:
-                sock.do_handshake()
-                break
-            except OpenSSL.SSL.WantReadError:
-                select.select([sock], [], [])
-        data = sock.get_peer_cert_chain()
+        data = _get_cert_from_domain(domain)
     except socket.gaierror:
         raise
     except Exception as e:
-        data = repr(e)
+        data = "".join(traceback.format_exception_only(type(e), e)).strip()
     return (domain, data)
 
 
@@ -185,21 +208,48 @@ def check_domains(domains, domain_certs):
     return result
 
 
-def domains_from_file(file):
-    if not file:
-        return
-    with open(file, 'r', encoding='utf-8') as f:
-        current = []
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            if line.endswith('/'):
-                current.append(line)
-                continue
+def domain_definitions_from_lines(lines):
+    result = []
+    current = []
+    current_start = 1
+    for index, line in enumerate(lines, start=1):
+        line = line.strip()
+        if not line or line.startswith('#'):
+            if not current:
+                current_start += 1
+            continue
+        if line.endswith('/'):
             current.append(line)
-            yield "".join(current)
-            current = []
+            continue
+        current.append(line)
+        try:
+            domain_definition = CertDomains("".join(current))
+        except DomainParseError as e:
+            fatal("Error in definition starting on line %s: %s" % (current_start, e))
+        result.append(domain_definition)
+        current = []
+        current_start = index + 1
+    return result
+
+
+def domain_definitions_from_filename(filename):
+    if not filename:
+        return []
+    with open(filename, 'r', encoding='utf-8') as f:
+        return domain_definitions_from_lines(f)
+
+
+def domain_definitions_from_cli(domains):
+    result = []
+    if not domains:
+        return result
+    for domain in domains:
+        try:
+            domain_definition = CertDomains(domain)
+        except DomainParseError as e:
+            fatal("Error in definition '%s': %s" % (domain, e))
+        result.append(domain_definition)
+    return result
 
 
 @click.command()
@@ -211,14 +261,11 @@ def main(file, domain, verbose):
 
        You can add checks for alternative names by separating them with a slash, like example.com/www.example.com.
 
-       Exits with return code 3 when there are warnings and code 4 when there are errors.
+       Exits with return code 3 when there are warnings, code 4 when there are errors and code 5 when the domain definition contains errors.
     """
-    domains = domains_from_file(file)
-    domains = itertools.chain(domains, domain)
-    domains = [
-        [Domain(d) for d in x.split('/')]
-        for x in domains
-        if x]
+    domains = list(itertools.chain(
+        domain_definitions_from_filename(file),
+        domain_definitions_from_cli(domain)))
     domain_certs = get_domain_certs(domains)
     total_warnings = 0
     total_errors = 0
