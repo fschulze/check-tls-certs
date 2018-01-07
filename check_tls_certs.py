@@ -218,7 +218,7 @@ def main(file, domain, verbose):
     domains = [
         [Domain(d) for d in x.split('/')]
         for x in domains
-        if x and not x.startswith('#')]
+        if x]
     domain_certs = get_domain_certs(domains)
     total_warnings = 0
     total_errors = 0
