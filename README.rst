@@ -31,14 +31,17 @@ Usage
       You can add checks for alternative names by separating them with a slash,
       like example.com/www.example.com.
 
-      Exits with return code 3 when there are warnings and code 4 when there are
-      errors.
+      Wildcard domains are supported.
+
+      Exits with return code 3 when there are warnings, code 4 when there are
+      errors and code 5 when the domain definition contains errors.
 
     Options:
-      -f, --file FILE              File to read domains from. One per line.
-      -v, --verbose / -q, --quiet  Toggle printing of infos for domains with no
-                                   errors or warnings.
-      --help                       Show this message and exit.
+      -f, --file FILE  File to read domains from. One per line.
+      -v, --verbose    Increase verbosity. Can be used several times. Currently
+                       max verbosity is 2.
+      --help           Show this message and exit.
+
 
 When domains are read from a file, lines starting with a ``#`` are ignored.
 If a line in a file ends in a ``/``, it is joined with the next line.

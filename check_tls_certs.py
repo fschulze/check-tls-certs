@@ -178,6 +178,13 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
             if len(domainnames) == 1:
                 name = cert.get_subject().commonName
                 if name != domain.host:
+                    if name.startswith('*.'):
+                        name_parts = name.split('.')[1:]
+                        name_parts_len = len(name_parts)
+                        domain_host_parts = domain.host.split('.')
+                        if (len(domain_host_parts) - name_parts_len) == 1:
+                            if domain_host_parts[-name_parts_len:] == name_parts:
+                                continue
                     msgs.append(
                         ('error', "The requested domain %s doesn't match the certificate domain %s." % (domain, name)))
             else:
@@ -266,6 +273,8 @@ def main(file, domain, verbose):
     """Checks the TLS certificate for each DOMAIN.
 
        You can add checks for alternative names by separating them with a slash, like example.com/www.example.com.
+
+       Wildcard domains are supported.
 
        Exits with return code 3 when there are warnings, code 4 when there are errors and code 5 when the domain definition contains errors.
     """

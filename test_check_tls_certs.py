@@ -237,3 +237,20 @@ def test_expiration_expired(makecert, utcnow):
     (msg,) = [m for m in msgs if 'certificate has expired on' in m[1]]
     assert msg[1].startswith('The certificate has expired on')
     assert (earliest_expiration - utcnow).days < 0
+
+
+@pytest.mark.usefixtures('no_chain_validation')
+def test_wildcard(makecert, utcnow):
+    from check_tls_certs import Domain
+    from check_tls_certs import check
+    cert = makecert(cn='*.example.com')
+    d = Domain('www.example.com')
+    (msgs, earliest_expiration) = check([(d, [cert])], utcnow)
+    errs = [m for m in msgs if "doesn't match the certificate domain" in m[1]]
+    assert errs == []
+    assert (earliest_expiration - utcnow).days > 360
+    d = Domain('foo.bar.example.com')
+    (msgs, earliest_expiration) = check([(d, [cert])], utcnow)
+    (err,) = [m for m in msgs if "doesn't match the certificate domain" in m[1]]
+    assert "foo.bar.example.com doesn't match the certificate domain *.example.com" in err[1]
+    assert (earliest_expiration - utcnow).days > 360
