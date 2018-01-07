@@ -4,7 +4,6 @@ import datetime
 import itertools
 import select
 import socket
-import ssl
 import sys
 import OpenSSL
 
