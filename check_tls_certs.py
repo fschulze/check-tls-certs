@@ -22,7 +22,7 @@ class Domain(str):
         connection_host = host
         if '|' in name:
             host, connection_host = name.split('|')
-            name = host
+            name = "%s (%s)" % (host, connection_host)
         result = str.__new__(cls, name)
         if domain.startswith('!'):
             result.no_fetch = True
