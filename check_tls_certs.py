@@ -76,10 +76,8 @@ def get_cert_from_domain(domain):
         return (domain, None)
     try:
         data = _get_cert_from_domain(domain)
-    except socket.gaierror:
-        raise
     except Exception as e:
-        data = "".join(traceback.format_exception_only(type(e), e)).strip()
+        data = e
     return (domain, data)
 
 
@@ -123,6 +121,8 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
     for domain, cert_chain in domainnames_certs:
         if cert_chain is None:
             continue
+        if isinstance(cert_chain, Exception):
+            cert_chain = "".join(traceback.format_exception_only(type(cert_chain), cert_chain)).strip()
         if not any(isinstance(cert, OpenSSL.crypto.X509) for cert in cert_chain):
             msgs.append(
                 ('error', "Couldn't fetch certificate for %s.\n%s" % (domain, cert_chain)))
@@ -282,6 +282,7 @@ def main(file, domain, verbose):
         domain_definitions_from_filename(file),
         domain_definitions_from_cli(domain)))
     domain_certs = get_domain_certs(domains)
+    exceptions = list(x for x in domain_certs.values() if isinstance(x, Exception))
     total_warnings = 0
     total_errors = 0
     earliest_expiration = None
@@ -314,6 +315,9 @@ def main(file, domain, verbose):
     if earliest_expiration:
         msg += "\nEarliest expiration on %s (%s)." % (
             earliest_expiration, earliest_expiration - utcnow)
+    if len(exceptions) > (len(domain_certs.values()) / 2):
+        click.echo(click.style(msg, fg="red"))
+        sys.exit(6)
     if total_errors:
         click.echo(click.style(msg, fg="red"))
         sys.exit(4)

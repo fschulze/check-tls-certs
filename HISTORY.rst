@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.12.0 - Unreleased
+-------------------
+
+* Refactor exception handling. If more than half of the domains throw an
+  exception during fetch, an exit code of 6 is returned instead of 4.
+  [fschulze]
+
+
 0.11.0 - 2018-01-07
 -------------------
 

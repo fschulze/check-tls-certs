@@ -171,8 +171,11 @@ def test_get_cert_from_domain_socket_gaierror(monkeypatch):
     monkeypatch.setattr(
         "check_tls_certs._get_cert_from_domain",
         _get_cert_from_domain)
-    with pytest.raises(socket.gaierror):
-        get_cert_from_domain(Domain('foo'))
+    d = Domain('foo')
+    result = get_cert_from_domain(d)
+    (rd, e) = result
+    assert rd == d
+    assert isinstance(e, socket.gaierror)
 
 
 def test_get_cert_from_domain_other_error(monkeypatch):
@@ -186,7 +189,7 @@ def test_get_cert_from_domain_other_error(monkeypatch):
         _get_cert_from_domain)
     d = Domain('foo')
     result = get_cert_from_domain(d)
-    assert result == (d, "ValueError: ham")
+    assert result == (d, _get_cert_from_domain.side_effect)
 
 
 def test_check_self_signed(makecert, utcnow):

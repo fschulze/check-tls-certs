@@ -34,7 +34,8 @@ Usage
       Wildcard domains are supported.
 
       Exits with return code 3 when there are warnings, code 4 when there are
-      errors and code 5 when the domain definition contains errors.
+      errors, code 6 when more than half of the domains raised an exception
+      during fetch and code 5 when the domain definition contains errors.
 
     Options:
       -f, --file FILE  File to read domains from. One per line.
