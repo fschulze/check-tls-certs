@@ -64,7 +64,7 @@ def test_arg(monkeypatch):
     domain_checks = []
     monkeypatch.setattr(
         "check_tls_certs.check",
-        lambda x, u: domain_checks.append(x) or ([], None))
+        lambda x, u, expiry_warn: domain_checks.append(x) or ([], None))
     runner = CliRunner()
     result = runner.invoke(main, ['-vv', 'example.com/www.example.com'])
     assert result.exit_code == 0
@@ -84,7 +84,7 @@ def test_file(monkeypatch, tmpdir):
     domain_checks = []
     monkeypatch.setattr(
         "check_tls_certs.check",
-        lambda x, u: domain_checks.append(x) or ([], None))
+        lambda x, u, expiry_warn: domain_checks.append(x) or ([], None))
     f = tmpdir.join("domains.txt")
     f.write_binary(b"example.com/www.example.com\nfoo.com\nbar.com/\n    #none.bar.com\n    www.bar.com")
     runner = CliRunner()

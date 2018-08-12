@@ -202,14 +202,14 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
     return (msgs, earliest_expiration)
 
 
-def check_domains(domains, domain_certs, utcnow):
+def check_domains(domains, domain_certs, utcnow, expiry_warn=default_expiry_warn):
     result = []
     for domainnames in domains:
         domainnames_certs = [(dn, domain_certs[dn]) for dn in domainnames]
         msgs = []
         seen = set()
         earliest_expiration = None
-        (dmsgs, expiration) = check(domainnames_certs, utcnow)
+        (dmsgs, expiration) = check(domainnames_certs, utcnow, expiry_warn=expiry_warn)
         for level, msg in dmsgs:
             if expiration:
                 if earliest_expiration is None or expiration < earliest_expiration:
@@ -268,8 +268,9 @@ def domain_definitions_from_cli(domains):
 @click.command()
 @click.option('-f', '--file', metavar='FILE', help='File to read domains from. One per line.')
 @click.option('-v', '--verbose', count=True, help='Increase verbosity. Can be used several times. Currently max verbosity is 2.')
+@click.option('expiry_warn', '-e', '--expiry-warning', metavar='DAYS', help='Days before expiration warning.', default=default_expiry_warn, type=int)
 @click.argument('domain', nargs=-1)
-def main(file, domain, verbose):
+def main(file, domain, expiry_warn, verbose):
     """Checks the TLS certificate for each DOMAIN.
 
        You can add checks for alternative names by separating them with a slash, like example.com/www.example.com.
@@ -287,7 +288,8 @@ def main(file, domain, verbose):
     total_errors = 0
     earliest_expiration = None
     utcnow = datetime.datetime.utcnow()
-    for domainnames, msgs, expiration in check_domains(domains, domain_certs, utcnow):
+    checked_domains = check_domains(domains, domain_certs, utcnow, expiry_warn=expiry_warn)
+    for domainnames, msgs, expiration in checked_domains:
         if expiration:
             if earliest_expiration is None or expiration < earliest_expiration:
                 earliest_expiration = expiration

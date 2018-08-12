@@ -4,6 +4,9 @@ Changelog
 0.12.0 - Unreleased
 -------------------
 
+* Allow overriding the threshold for expiration warnings with ``-e`` option.
+  [fschulze]
+
 * Refactor exception handling. If more than half of the domains throw an
   exception during fetch, an exit code of 6 is returned instead of 4.
   [fschulze]
