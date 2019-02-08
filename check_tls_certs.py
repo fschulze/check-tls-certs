@@ -142,7 +142,6 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
             continue
         if isinstance(cert_chain, Exception):
             cert_chain = "".join(traceback.format_exception_only(type(cert_chain), cert_chain)).strip()
-            print(cert_chain)
         if not any(isinstance(cert, OpenSSL.crypto.X509) for cert in cert_chain):
             msgs.append(
                 ('error', "Couldn't fetch certificate for %s.\n%s" % (domain, cert_chain)))
@@ -201,12 +200,6 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
                     if name.startswith('*.'):
                         if(match_wildcard_domain(domain.host, alt_names)):
                             continue
-                        name_parts = name.split('.')[1:]
-                        name_parts_len = len(name_parts)
-                        domain_host_parts = domain.host.split('.')
-                        if (len(domain_host_parts) - name_parts_len) == 1:
-                            if domain_host_parts[-name_parts_len:] == name_parts:
-                                continue
                     msgs.append(
                         ('error', "The requested domain %s doesn't match the certificate domain %s." % (domain, name)))
             else:
