@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import asyncio
 import click
 import datetime
@@ -113,6 +115,23 @@ def validate_certificate_chain(cert_chain, msgs):
         if index > 0:
             cert_store.add_cert(cert)
 
+def match_wildcard_domain(domain, listwildcard):
+    for i in listwildcard:
+        domaintest = domain.split('.')
+        certtest = i.split('.')
+        domaintest.reverse()
+        certtest.reverse()
+        if(len(certtest) != len(domaintest)):
+            continue
+        for index, e in enumerate(domaintest):
+            if(certtest[index] != '*'):
+                if(e != certtest[index]):
+                    continue
+            else:
+                if(index == (len(domaintest)-1)):
+                    return True
+    return False
+
 
 def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
     msgs = []
@@ -123,6 +142,7 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
             continue
         if isinstance(cert_chain, Exception):
             cert_chain = "".join(traceback.format_exception_only(type(cert_chain), cert_chain)).strip()
+            print(cert_chain)
         if not any(isinstance(cert, OpenSSL.crypto.X509) for cert in cert_chain):
             msgs.append(
                 ('error', "Couldn't fetch certificate for %s.\n%s" % (domain, cert_chain)))
@@ -179,6 +199,8 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
                 name = cert.get_subject().commonName
                 if name != domain.host:
                     if name.startswith('*.'):
+                        if(match_wildcard_domain(domain.host, alt_names)):
+                            continue
                         name_parts = name.split('.')[1:]
                         name_parts_len = len(name_parts)
                         domain_host_parts = domain.host.split('.')
@@ -328,3 +350,6 @@ def main(file, domain, expiry_warn, verbose):
         sys.exit(3)
     if verbose:
         click.echo(click.style(msg, fg="green"))
+
+if __name__ == '__main__':
+    main()
