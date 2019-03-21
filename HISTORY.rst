@@ -4,6 +4,9 @@ Changelog
 0.12.0 - Unreleased
 -------------------
 
+* Set timeout on socket before wrapping it in the SSL Connection.
+  [fschulze]
+
 * Allow overriding the threshold for expiration warnings with ``-e`` option.
   [fschulze]
 
