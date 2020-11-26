@@ -4,6 +4,9 @@ Changelog
 0.12.0 - Unreleased
 -------------------
 
+* Drop support for Python < 3.6.
+  [fschulze]
+
 * Fix setting hostname when using ``|``.
   [fschulze]
 
