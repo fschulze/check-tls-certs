@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.12.0 - Unreleased
+0.12.0 - 2020-11-26
 -------------------
 
 * Drop support for Python < 3.6.
