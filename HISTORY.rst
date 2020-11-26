@@ -4,6 +4,9 @@ Changelog
 0.12.0 - Unreleased
 -------------------
 
+* Fix setting hostname when using ``|``.
+  [fschulze]
+
 * Set timeout on socket before wrapping it in the SSL Connection.
   [fschulze]
 
