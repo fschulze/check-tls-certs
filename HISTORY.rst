@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.13.0 - Unreleased
+-------------------
+
+* Support expired certificate roots in chains.
+  [fschulze]
+
+
 0.12.0 - 2020-11-26
 -------------------
 

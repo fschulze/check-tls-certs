@@ -100,19 +100,35 @@ def domain_key(d):
     return tuple(reversed(d.split('.')))
 
 
+def format_components(components):
+    return '/'.join('='.join(x.decode('utf-8') for x in c) for c in components)
+
+
 def validate_certificate_chain(cert_chain, msgs):
     ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
     ctx.set_default_verify_paths()
     cert_store = ctx.get_cert_store()
+    pending_msgs = []
     for index, cert in reversed(list(enumerate(cert_chain))):
         sc = OpenSSL.crypto.X509StoreContext(cert_store, cert)
         try:
             sc.verify_certificate()
         except OpenSSL.crypto.X509StoreContextError as e:
-            msgs.append(
-                ('error', "Validation error '%s'." % e))
-        if index > 0:
-            cert_store.add_cert(cert)
+            msg = (
+                'error',
+                "Validation error '%s' for subject '%s' issued by '%s'." % (
+                    e,
+                    format_components(cert.get_subject().get_components()),
+                    format_components(cert.get_issuer().get_components())))
+            if 'certificate has expired' in str(e):
+                pending_msgs.append(msg)
+            else:
+                msgs.extend(pending_msgs)
+                pending_msgs.clear()
+                msgs.append(msg)
+        else:
+            if index > 0:
+                cert_store.add_cert(cert)
 
 
 def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
