@@ -4,6 +4,9 @@ Changelog
 0.13.0 - Unreleased
 -------------------
 
+* Retry once after a 5 second delay in case of connection errors.
+  [fschulze]
+
 * Support expired certificate roots in chains.
   [fschulze]
 

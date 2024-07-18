@@ -5,6 +5,7 @@ import itertools
 import select
 import socket
 import sys
+import time
 import traceback
 import OpenSSL
 
@@ -75,10 +76,13 @@ def _get_cert_from_domain(domain):
 def get_cert_from_domain(domain):
     if domain.no_fetch:
         return (domain, None)
-    try:
-        data = _get_cert_from_domain(domain)
-    except Exception as e:
-        data = e
+    for i in range(2):
+        try:
+            data = _get_cert_from_domain(domain)
+            break
+        except Exception as e:
+            data = e
+            time.sleep(5)
     return (domain, data)
 
 
