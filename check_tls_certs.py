@@ -126,6 +126,8 @@ def validate_certificate_chain(cert_chain, msgs):
                     format_components(cert.get_issuer().get_components())))
             if 'certificate has expired' in str(e):
                 pending_msgs.append(msg)
+            elif 'unable to get local issuer certificate' in str(e):
+                pending_msgs.append(msg)
             else:
                 msgs.extend(pending_msgs)
                 pending_msgs.clear()
