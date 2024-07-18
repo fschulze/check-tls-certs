@@ -4,6 +4,9 @@ Changelog
 0.13.0 - Unreleased
 -------------------
 
+* Support wildcard domains from alternate names.
+  [fschulze]
+
 * Retry once after a 5 second delay in case of connection errors.
   [fschulze]
 

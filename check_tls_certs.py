@@ -193,23 +193,28 @@ def check(domainnames_certs, utcnow, expiry_warn=default_expiry_warn):
                 x.strip().replace('DNS:', '')
                 for x in str(ext).split(','))
         alt_names.add(cert.get_subject().commonName)
+        wildcard_names = {x for x in alt_names if x.startswith('*.')}
+        alt_names = alt_names - wildcard_names
         unmatched = domainnames.difference(alt_names)
         if unmatched:
             msgs.append(
                 ('info', "Alternate names in certificate: %s" % ', '.join(
                     sorted(alt_names, key=domain_key))))
+            if wildcard_names:
+                msgs.append(
+                    ('info', "Wildcard names in certificate: %s" % ', '.join(
+                        sorted(wildcard_names, key=domain_key))))
             if len(domainnames) == 1:
-                name = cert.get_subject().commonName
-                if name != domain.host:
-                    if name.startswith('*.'):
-                        name_parts = name.split('.')[1:]
-                        name_parts_len = len(name_parts)
-                        domain_host_parts = domain.host.split('.')
-                        if (len(domain_host_parts) - name_parts_len) == 1:
-                            if domain_host_parts[-name_parts_len:] == name_parts:
-                                continue
+                for name in wildcard_names:
+                    name_parts = name.split('.')[1:]
+                    name_parts_len = len(name_parts)
+                    domain_host_parts = domain.host.split('.')
+                    if (len(domain_host_parts) - name_parts_len) == 1:
+                        if domain_host_parts[-name_parts_len:] == name_parts:
+                            break
+                else:
                     msgs.append(
-                        ('error', "The requested domain %s doesn't match the certificate domain %s." % (domain, name)))
+                        ('error', "The requested domain %s doesn't match any of the certificates wildcard domains %s." % (domain, ', '.join(sorted(wildcard_names, key=domain_key)))))
             else:
                 msgs.append(
                     ('warning', "Unmatched alternate names %s." % ', '.join(
