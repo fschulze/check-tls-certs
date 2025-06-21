@@ -4,6 +4,9 @@ Changelog
 0.13.0 - Unreleased
 -------------------
 
+* Skip anchors in certificate chain.
+  [fschulze]
+
 * Support wildcard domains from alternate names.
   [fschulze]
 

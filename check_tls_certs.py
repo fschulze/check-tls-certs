@@ -1,3 +1,4 @@
+from cryptography import x509
 import asyncio
 import click
 import datetime
@@ -114,6 +115,16 @@ def validate_certificate_chain(cert_chain, msgs):
     cert_store = ctx.get_cert_store()
     pending_msgs = []
     for index, cert in reversed(list(enumerate(cert_chain))):
+        crypt_cert = cert.to_cryptography()
+        basic_constraints = crypt_cert.extensions.get_extension_for_class(
+            x509.BasicConstraints).value
+        if basic_constraints.ca and basic_constraints.path_length is None:
+            msgs.append((
+                'info',
+                "Chain anchor with subject '%s' issued by '%s' in chain." % (
+                    format_components(cert.get_subject().get_components()),
+                    format_components(cert.get_issuer().get_components()))))
+            continue
         sc = OpenSSL.crypto.X509StoreContext(cert_store, cert)
         try:
             sc.verify_certificate()

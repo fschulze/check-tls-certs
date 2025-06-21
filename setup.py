@@ -22,6 +22,7 @@ setup(
         "Programming Language :: Python :: 3.8"],
     install_requires=[
         'click',
+        'cryptography',
         'pyOpenSSL'],
     entry_points={
         'console_scripts': ['check_tls_certs = check_tls_certs:main']},
