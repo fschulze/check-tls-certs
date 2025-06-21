@@ -1,5 +1,6 @@
 /.tox/
 /bin/
+/build/
 /default.sublime-*
 /dist/
 /domains.txt
